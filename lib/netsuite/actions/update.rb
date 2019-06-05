@@ -8,11 +8,14 @@ module NetSuite
 
       def initialize(klass, attributes)
         @klass      = klass
+        @web_services_preferences = {}
+        @web_services_preferences[:run_suite_scripts] = attributes.delete(:run_suite_scripts)
         @attributes = attributes
       end
 
       def request(credentials={})
-        NetSuite::Configuration.connection({}, credentials).call :update, :message => request_body
+        connection_params = { web_services_preferences: @web_services_preferences }
+        NetSuite::Configuration.connection(connection_params, credentials).call :update, :message => request_body
       end
 
       # <platformMsgs:update>
@@ -70,7 +73,12 @@ module NetSuite
       end
 
       module Support
-        def update(options = {}, credentials={})
+        def update(options = {}, credentials = {}, web_services_preferences = {})
+
+          if web_services_preferences.has_key?(:run_suite_scripts)
+            options.merge!(run_suite_scripts: web_services_preferences[:run_suite_scripts])
+          end
+
           options.merge!(:internal_id => internal_id) if respond_to?(:internal_id) && internal_id
           options.merge!(:external_id => external_id) if respond_to?(:external_id) && external_id
           response = NetSuite::Actions::Update.call([self.class, options], credentials)
