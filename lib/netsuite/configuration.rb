@@ -15,11 +15,13 @@ module NetSuite
     end
 
     def connection(params={}, credentials={})
+      preferences = params.delete(:web_services_preferences)
+
       client = Savon.client({
         wsdl: cached_wsdl || wsdl,
         read_timeout: read_timeout,
         namespaces: namespaces,
-        soap_header: auth_header(credentials).update(soap_header),
+        soap_header: auth_header(credentials).update(soap_header_with_web_preferences_headers(preferences)),
         pretty_print_xml: true,
         filters: filters,
         logger: logger,
@@ -363,6 +365,20 @@ module NetSuite
 
     def log_level=(value)
       attributes[:log_level] ||= value
+    end
+
+    def soap_header_with_web_preferences_headers(web_services_preferences)
+      base_soap_header = soap_header
+
+      return base_soap_header if web_services_preferences.nil?
+
+      if web_services_preferences.has_key?(:run_suite_scripts)
+        base_soap_header['platformMsgs:preferences'] ||= {}
+        run_scripts_tag = 'platformMsgs:runServerSuiteScriptAndTriggerWorkflows'
+        base_soap_header['platformMsgs:preferences'][run_scripts_tag] = web_services_preferences[:run_suite_scripts]
+      end
+
+      base_soap_header
     end
   end
 end
