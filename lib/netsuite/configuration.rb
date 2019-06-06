@@ -385,7 +385,7 @@ module NetSuite
     end
 
     def soap_header_with_web_preferences_headers(web_services_preferences)
-      base_soap_header = soap_header
+      base_soap_header = soap_header.dup
 
       return base_soap_header if web_services_preferences.nil?
 
