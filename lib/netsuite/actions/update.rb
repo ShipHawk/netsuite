@@ -9,7 +9,11 @@ module NetSuite
       def initialize(klass, attributes)
         @klass      = klass
         @web_services_preferences = {}
-        @web_services_preferences[:run_suite_scripts] = attributes.delete(:run_suite_scripts)
+
+        if attributes.has_key?(:run_suite_scripts)
+          @web_services_preferences[:run_suite_scripts] = attributes.delete(:run_suite_scripts)
+        end
+
         @attributes = attributes
       end
 
