@@ -326,15 +326,11 @@ describe NetSuite::Configuration do
 
   describe "#credentials" do
     context "when none are defined" do
-      skip "should properly create the auth credentials" do
-
-      end
+      skip "should properly create the auth credentials"
     end
 
     context "when they are defined" do
-      it "should properly replace the default auth credentials" do
-
-      end
+      skip "should properly replace the default auth credentials"
     end
   end
 
@@ -368,6 +364,65 @@ describe NetSuite::Configuration do
 
     it 'sets logger' do
       expect(config.logger).to eql(logger)
+    end
+  end
+
+  describe "#log" do
+    it 'allows a file path to be set as the log destination' do
+      file_path = Tempfile.new.path
+      config.log = file_path
+      config.logger.info "foo"
+
+      log_contents = open(file_path).read
+      expect(log_contents).to include("foo")
+    end
+
+    it 'allows an IO device to bet set as the log destination' do
+      stream = StringIO.new
+      config.log = stream
+      config.logger.info "foo"
+
+      expect(stream.string).to include("foo")
+    end
+  end
+
+  describe '#log_level' do
+    it 'defaults to :debug' do
+      expect(config.log_level).to eq(:debug)
+    end
+
+    it 'can be initially set to any log level' do
+      config.log_level(:info)
+
+      expect(config.log_level).to eq(:info)
+    end
+
+    it 'can override itself' do
+      config.log_level = :info
+
+      expect(config.log_level).to eq(:info)
+
+      config.log_level(:debug)
+
+      expect(config.log_level).to eq(:debug)
+    end
+  end
+
+  describe '#log_level=' do
+    it 'can set the initial log_level' do
+      config.log_level = :info
+
+      expect(config.log_level).to eq(:info)
+    end
+
+    it 'can override a previously set log level' do
+      config.log_level = :info
+
+      expect(config.log_level).to eq(:info)
+
+      config.log_level = :debug
+
+      expect(config.log_level).to eq(:debug)
     end
   end
 

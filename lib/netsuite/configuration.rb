@@ -15,12 +15,14 @@ module NetSuite
     end
 
     def connection(params={}, credentials={})
+      preferences = params.delete(:web_services_preferences)
+
       client = Savon.client({
         wsdl: cached_wsdl || wsdl,
         read_timeout: read_timeout,
         open_timeout: open_timeout,
         namespaces: namespaces,
-        soap_header: auth_header(credentials).update(soap_header),
+        soap_header: auth_header(credentials).update(soap_header_with_web_preferences_headers(preferences)),
         pretty_print_xml: true,
         filters: filters,
         logger: logger,
@@ -350,7 +352,10 @@ module NetSuite
 
     def logger(value = nil)
       if value.nil?
-        attributes[:logger] ||= ::Logger.new((log && !log.empty?) ? log : $stdout)
+        # if passed a IO object (like StringIO) `empty?` won't exist
+        valid_log = log && !(log.respond_to?(:empty?) && log.empty?)
+
+        attributes[:logger] ||= ::Logger.new(valid_log ? log : $stdout)
       else
         attributes[:logger] = value
       end
@@ -370,12 +375,27 @@ module NetSuite
     end
 
     def log_level(value = nil)
-      self.log_level = value || :debug
-      attributes[:log_level]
+      self.log_level = value if value
+
+      attributes[:log_level] || :debug
     end
 
     def log_level=(value)
-      attributes[:log_level] ||= value
+      attributes[:log_level] = value
+    end
+
+    def soap_header_with_web_preferences_headers(web_services_preferences)
+      base_soap_header = soap_header.dup
+
+      return base_soap_header if web_services_preferences.nil?
+
+      if web_services_preferences.has_key?(:run_suite_scripts)
+        base_soap_header['platformMsgs:preferences'] ||= {}
+        run_scripts_tag = 'platformMsgs:runServerSuiteScriptAndTriggerWorkflows'
+        base_soap_header['platformMsgs:preferences'][run_scripts_tag] = web_services_preferences[:run_suite_scripts]
+      end
+
+      base_soap_header
     end
   end
 end
